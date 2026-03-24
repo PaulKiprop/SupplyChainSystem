@@ -1,10 +1,11 @@
 package com.paul.supplychain.controller;
 
-import com.paul.supplychain.dto.DtoMapper;
-import com.paul.supplychain.dto.SupplierRequestDto;
-import com.paul.supplychain.dto.SupplierResponseDto;
+import com.paul.supplychain.dto.*;
 import com.paul.supplychain.service.impl.SupplierServiceImpl;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,13 +28,20 @@ public class SupplierController {
     }
 
     @GetMapping
-    public ResponseEntity<List<SupplierResponseDto>> getAll() {
-        List<SupplierResponseDto> dtos = service.getAllSuppliers()
-                .stream()
-                .map(DtoMapper::toSupplierDto)
-                .collect(Collectors.toList());
+    public ResponseEntity<PageResponseDto<SupplierResponseDto>> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                PageResponseDto.from(service.getAllSuppliers(pageable).map(DtoMapper::toSupplierDto))
+        );
+    }
 
-        return ResponseEntity.ok(dtos);
+    @PutMapping("/{id}")
+    public ResponseEntity<SupplierResponseDto> update(
+            @PathVariable Long id,
+            @Valid @RequestBody SupplierUpdateRequestDto dto
+    ) {
+        return ResponseEntity.ok(DtoMapper.toSupplierDto(service.updateSupplier(id, dto)));
     }
 
     @PostMapping("/{supplierId}/products/{productId}")

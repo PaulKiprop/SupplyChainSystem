@@ -1,17 +1,20 @@
 package com.paul.supplychain.service.impl;
 
 import com.paul.supplychain.dto.ProductRequestDto;
+import com.paul.supplychain.dto.ProductUpdateRequestDto;
 import com.paul.supplychain.entity.Product;
 import com.paul.supplychain.exception.ConflictException;
 import com.paul.supplychain.exception.NotFoundException;
 import com.paul.supplychain.repository.InventoryRepository;
 import com.paul.supplychain.repository.ProductRepository;
 import com.paul.supplychain.repository.SupplierRepository;
+import com.paul.supplychain.util.PageableSanitizer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.List;
 
 @Service
 public class ProductServiceImpl {
@@ -45,8 +48,8 @@ public class ProductServiceImpl {
         return productRepository.save(product);
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findAll();
+    public Page<Product> getAllProducts(Pageable pageable) {
+        return productRepository.findAll(PageableSanitizer.sanitize(pageable));
     }
 
     public Product getProductById(Long id) {
@@ -54,13 +57,22 @@ public class ProductServiceImpl {
                 .orElseThrow(() -> new NotFoundException("Product not found"));
     }
 
+    public Product updateProduct(Long id, ProductUpdateRequestDto dto) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        product.setName(dto.name());
+        product.setDescription(dto.description());
+        product.setPrice(dto.price());
+
+        return productRepository.save(product);
+    }
+
     @Transactional
     public void deleteProduct(Long productId) {
-
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new NotFoundException("Product not found"));
 
-        // Supplier is the owning side of product_suppliers; update it first.
         for (var supplier : new ArrayList<>(product.getSuppliers())) {
             supplier.getProducts().remove(product);
         }

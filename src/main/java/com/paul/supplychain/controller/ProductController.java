@@ -1,10 +1,11 @@
 package com.paul.supplychain.controller;
 
-import com.paul.supplychain.dto.DtoMapper;
-import com.paul.supplychain.dto.ProductRequestDto;
-import com.paul.supplychain.dto.ProductResponseDto;
+import com.paul.supplychain.dto.*;
 import com.paul.supplychain.service.impl.ProductServiceImpl;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,17 +28,25 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponseDto>> getAll() {
-        List<ProductResponseDto> dtos = service.getAllProducts()
-                .stream()
-                .map(DtoMapper::toProductDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<PageResponseDto<ProductResponseDto>> getAll(
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                PageResponseDto.from(service.getAllProducts(pageable).map(DtoMapper::toProductDto))
+        );
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponseDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(DtoMapper.toProductDto(service.getProductById(id)));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProductResponseDto> updateProduct(
+            @PathVariable Long id,
+            @Valid @RequestBody ProductUpdateRequestDto dto
+    ) {
+        return ResponseEntity.ok(DtoMapper.toProductDto(service.updateProduct(id, dto)));
     }
 
     @DeleteMapping("/{id}")

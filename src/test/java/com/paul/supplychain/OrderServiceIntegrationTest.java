@@ -18,9 +18,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -87,6 +85,8 @@ class OrderServiceIntegrationTest {
 
         assertEquals(OrderStatus.PENDING, createdOrder.getStatus());
         assertEquals(1, createdOrder.getItems().size());
+        assertNotNull(createdOrder.getCreatedAt());
+        assertNotNull(createdOrder.getUpdatedAt());
 
         Inventory inventoryAfterCreate = inventoryRepository
                 .findByWarehouse_IdAndProduct_Id(warehouse.getId(), product.getId())
@@ -97,7 +97,6 @@ class OrderServiceIntegrationTest {
                 createdOrder.getId(),
                 new UpdateOrderStatusRequestDto(OrderStatus.CONFIRMED, "Reserve stock")
         );
-
         assertEquals(OrderStatus.CONFIRMED, confirmedOrder.getStatus());
 
         Inventory inventoryAfterConfirm = inventoryRepository
@@ -109,7 +108,6 @@ class OrderServiceIntegrationTest {
                 createdOrder.getId(),
                 new UpdateOrderStatusRequestDto(OrderStatus.CANCELLED, "Cancel order")
         );
-
         assertEquals(OrderStatus.CANCELLED, cancelledOrder.getStatus());
 
         Inventory inventoryAfterCancel = inventoryRepository
@@ -139,10 +137,10 @@ class OrderServiceIntegrationTest {
 
         assertTrue(exception.getMessage().contains("Insufficient stock"));
 
-        Inventory inventoryAfterFailedConfirm = inventoryRepository
+        Inventory inventoryAfterFail = inventoryRepository
                 .findByWarehouse_IdAndProduct_Id(warehouse.getId(), product.getId())
                 .orElseThrow();
-        assertEquals(20, inventoryAfterFailedConfirm.getQuantity());
+        assertEquals(20, inventoryAfterFail.getQuantity());
 
         SupplyOrder reloadedOrder = orderRepository.findById(createdOrder.getId()).orElseThrow();
         assertEquals(OrderStatus.PENDING, reloadedOrder.getStatus());

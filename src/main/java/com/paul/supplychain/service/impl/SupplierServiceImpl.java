@@ -1,11 +1,15 @@
 package com.paul.supplychain.service.impl;
 
 import com.paul.supplychain.dto.SupplierRequestDto;
+import com.paul.supplychain.dto.SupplierUpdateRequestDto;
 import com.paul.supplychain.entity.Product;
 import com.paul.supplychain.entity.Supplier;
 import com.paul.supplychain.exception.NotFoundException;
 import com.paul.supplychain.repository.ProductRepository;
 import com.paul.supplychain.repository.SupplierRepository;
+import com.paul.supplychain.util.PageableSanitizer;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -28,8 +32,22 @@ public class SupplierServiceImpl {
         return supplierRepo.save(supplier);
     }
 
-    public List<Supplier> getAllSuppliers() {
-        return supplierRepo.findAll();
+    public Page<Supplier> getAllSuppliers(Pageable pageable) {
+        return supplierRepo.findAll(PageableSanitizer.sanitize(pageable));
+    }
+    public Supplier getSupplierById(Long id) {
+        return supplierRepo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Supplier not found"));
+    }
+
+    public Supplier updateSupplier(Long id, SupplierUpdateRequestDto dto) {
+        Supplier supplier = supplierRepo.findById(id)
+                .orElseThrow(() -> new NotFoundException("Supplier not found"));
+
+        supplier.setName(dto.name());
+        supplier.setEmail(dto.email());
+
+        return supplierRepo.save(supplier);
     }
 
     public Supplier assignProduct(Long supplierId, Long productId) {
